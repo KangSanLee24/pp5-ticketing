@@ -1,0 +1,37 @@
+import { UserInfo } from 'src/utils/userInfo.decorator';
+
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+
+import { SignUpDto } from './dto/sign-up.dto';
+import { SignInDto } from './dto/sign-in.dto';
+import { User } from './entities/user.entity';
+import { UsersService } from './users.service';
+
+@Controller('users')
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Post('sign-up')
+  async register(@Body() signUpDto: SignUpDto) {
+    return await this.usersService.signUp(signUpDto.email, signUpDto.password, signUpDto.passwordConfirm, signUpDto.nickname);
+  }
+
+  @Post('sign-in')
+  async login(@Body() signInDto: SignInDto) {
+    return await this.usersService.signIn(signInDto.email, signInDto.password);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Get('')
+  async getMyInfo(@UserInfo() user: User) {
+    return await this.usersService.findByEmail(user.email);
+  }
+
+//   // 예매 기록 조회
+//   @UseGuards(AuthGuard('jwt'))
+//   @Get('reservations')
+//   async getMyReservations(@UserInfo() user: User) {
+//     return await this.reservationsService.findByEmail(user.email);
+//   }
+}
