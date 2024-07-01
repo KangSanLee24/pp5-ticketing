@@ -1,31 +1,34 @@
-import Joi from 'joi';
-import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
+import Joi from "joi";
+import { SnakeNamingStrategy } from "typeorm-naming-strategies";
 
-import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { Module } from "@nestjs/common";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { TypeOrmModule, TypeOrmModuleOptions } from "@nestjs/typeorm";
 
-import { AuthModule } from './auth/auth.module';
-import { User } from './users/entities/user.entity';
-import { UsersModule } from './users/users.module';
+import { AuthModule } from "./auth/auth.module";
+import { UsersModule } from "./users/users.module";
+import { ShowsModule } from './shows/shows.module';
+import { User } from "./users/entities/user.entity";
+import { Show } from "./shows/entities/show.entity";
+import { ShowDetail } from "./shows/entities/show-detail.entity";
 
 const typeOrmModuleOptions = {
   useFactory: async (
-    configService: ConfigService,
+    configService: ConfigService
   ): Promise<TypeOrmModuleOptions> => ({
     namingStrategy: new SnakeNamingStrategy(),
     type: "mysql",
-    username: configService.get('DB_USERNAME'),
-    password: configService.get('DB_PASSWORD'),
-    host: configService.get('DB_HOST'),
-    port: configService.get('DB_PORT'),
-    database: configService.get('DB_NAME'),
-    entities: [User],
-    synchronize: configService.get('DB_SYNC'),
+    username: configService.get("DB_USERNAME"),
+    password: configService.get("DB_PASSWORD"),
+    host: configService.get("DB_HOST"),
+    port: configService.get("DB_PORT"),
+    database: configService.get("DB_NAME"),
+    entities: [User, Show, ShowDetail],
+    synchronize: configService.get("DB_SYNC"),
     logging: true,
   }),
   inject: [ConfigService],
-}
+};
 
 @Module({
   imports: [
@@ -44,6 +47,7 @@ const typeOrmModuleOptions = {
     TypeOrmModule.forRootAsync(typeOrmModuleOptions),
     AuthModule,
     UsersModule,
+    ShowsModule,
   ],
   controllers: [],
   providers: [],
