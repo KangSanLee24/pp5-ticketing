@@ -7,7 +7,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { User } from './entities/user.entity';
-import { ROLE } from './types/userRole.type';
+import { ROLE } from './types/user-role.type';
 
 @Injectable()
 export class UsersService {
@@ -27,7 +27,7 @@ export class UsersService {
     const existingUser = await this.findByEmail(email);
     if (existingUser) {
       throw new ConflictException(
-        '이미 해당 이메일로 가입된 사용자가 있습니다!',
+        '이미 해당 이메일로 가입된 사용자가 있습니다.',
       );
     }
     // this.configService.get<number>('HASH_TIMES')

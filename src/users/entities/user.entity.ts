@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
-import { ROLE } from '../types/userRole.type';
+import { ROLE } from '../types/user-role.type';
 
 @Index('email', ['email'], { unique: true })
 @Entity({
@@ -16,13 +16,13 @@ export class User {
   @Column({ type: 'varchar', select: false, nullable: false })
   password: string;
 
-  @Column({ type: 'varchar', nullable: true })
+  @Column({ type: 'varchar', nullable: false })
   nickname: string;
 
-  @Column({ type: 'enum', enum: ROLE, default: ROLE.USER })
+  @Column({ type: 'enum', enum: ROLE, default: ROLE.USER, nullable: false })
   role: ROLE;
 
-  @Column({ type: 'int', default: 1000000 })
+  @Column({ type: 'int', default: 1000000, nullable: false })
   point: number;
 
   @CreateDateColumn()
