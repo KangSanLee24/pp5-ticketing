@@ -12,8 +12,7 @@ import {
 export class IsAfter implements ValidatorConstraintInterface {
   validate(ticketCloseDate: Date, args: ValidationArguments) {
     const ticketOpenDate: Date = args.object[args.constraints[0]];
-    console.log("ticketOpenDate: ", ticketOpenDate);
-    console.log("ticketCloseDate: ", ticketCloseDate);
+
     return ticketOpenDate < ticketCloseDate;
   }
 }
