@@ -1,4 +1,4 @@
-### 개인 프로젝트 영화 예매 사이트
+# 개인 프로젝트 영화 예매 사이트
 
 ## 프로젝트 소개 어쩌구
 
@@ -9,6 +9,12 @@
 ## ERD
 
 ![ERD](./assets/erd.PNG)
+
+### Virtual Column을 사용하지 않고 rest_of_seats를 계산한 이유
+
+가상 컬럼을 선택을 안 한 이유에 대해서 설명할 수 있어야 된다.
+
+가상 컬럼은? 차이점은?
 
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>

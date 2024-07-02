@@ -7,15 +7,14 @@ import { TypeOrmModule, TypeOrmModuleOptions } from "@nestjs/typeorm";
 
 import { AuthModule } from "./auth/auth.module";
 import { UsersModule } from "./users/users.module";
-import { ShowsModule } from './shows/shows.module';
+import { ShowsModule } from "./shows/shows.module";
 import { User } from "./users/entities/user.entity";
 import { Show } from "./shows/entities/show.entity";
 import { ShowDetail } from "./shows/entities/show-detail.entity";
+import { ReservationsModule } from './reservations/reservations.module';
 
 const typeOrmModuleOptions = {
-  useFactory: async (
-    configService: ConfigService
-  ): Promise<TypeOrmModuleOptions> => ({
+  useFactory: async (configService: ConfigService): Promise<TypeOrmModuleOptions> => ({
     namingStrategy: new SnakeNamingStrategy(),
     type: "mysql",
     username: configService.get("DB_USERNAME"),
@@ -48,6 +47,7 @@ const typeOrmModuleOptions = {
     AuthModule,
     UsersModule,
     ShowsModule,
+    ReservationsModule,
   ],
   controllers: [],
   providers: [],
