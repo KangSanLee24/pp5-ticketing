@@ -1,4 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, VirtualColumn } from "typeorm";
 import { Show } from "./show.entity";
 
 @Entity({
@@ -12,11 +12,12 @@ export class ShowDetail {
     @JoinColumn({ name: 'show_id' })
     showId: number;
 
-    @Column({ type: 'date', nullable: false })
+    @Column({ type: 'datetime', nullable: false })
     showDate: Date;
 
     @Column({ type: 'int', nullable: false })
     seat: number;
 
-    
+    // @VirtualColumn()
+    // restOfSeat: number;
 }

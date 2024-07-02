@@ -1,5 +1,7 @@
-import { IsArray, IsDate, IsEnum, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsArray, IsDate, IsEnum, IsNotEmpty, IsNumber, IsString, Validate } from "class-validator";
 import { SHOW_CATEGORY } from "../types/show-category.type";
+import { Type } from "class-transformer";
+import { IsAfter } from "../validators/is-after.validators";
 
 export class CreateShowDto {
     @IsString()
@@ -26,14 +28,18 @@ export class CreateShowDto {
     @IsNotEmpty({ message: '가격을 입력해주세요.'})
     price: number
 
+    @Type(() => Date) // JSON의 날짜 문자열을 Date 타입으로 변환
     @IsDate()
     @IsNotEmpty({ message: '티켓 오픈 날짜와 시간을 입력해주세요.'})
     ticketOpenDate: Date
 
+    @Type(() => Date) // JSON의 날짜 문자열을 Date 타입으로 변환
     @IsDate()
     @IsNotEmpty({ message: '티켓 마감 날짜와 시간을 입력해주세요.'})
+    @Validate(IsAfter, ['ticketOpenDate'], { message: '티켓 마감 날짜를 티켓 오픈 날짜보다 늦게 입력해주세요.'})
     ticketCloseDate: Date
 
+    @Type(() => Date) // JSON의 날짜 문자열을 Date 타입으로 변환
     @IsArray()
     @IsNotEmpty({ message: '공연 날짜와 시간을 입력해주세요.'})
     @IsDate({ each: true }) // : Date 타입인지 확인하는 거임.

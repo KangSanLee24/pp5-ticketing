@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 
@@ -7,6 +7,7 @@ import { Show } from './entities/show.entity';
 import { ShowDetail } from './entities/show-detail.entity';
 import { CreateShowDto } from './dto/create-show.dto';
 import { UpdateShowDto } from './dto/update-show.dto';
+import { FindShowsQuery } from './dto/find-shows-query.dto';
 
 @Injectable()
 export class ShowsService {
@@ -81,5 +82,53 @@ export class ShowsService {
     }
 
     await this.showRepository.delete({ id: showId });
+  }
+
+  async findOne(showId: number) {
+    const show = await this.showRepository.findOne({ where: { id: showId }, relations: { showDetails: true } });
+    if (!show) {
+      throw new NotFoundException('공연을 찾을 수 없습니다.');
+    }
+    return show;
+  }
+
+  // 카테고리 없으면 싹 다 검색
+  async findShows(query: FindShowsQuery) {
+    const {  category, sort } = query;
+
+    let sortOrder: 'ASC' | 'DESC' = 'ASC';
+    if(_.isEmpty(sort)) {
+      sortOrder = 'ASC';
+    } else {
+      sortOrder = sort;
+    }
+
+    if(_.isEmpty(category)) {
+      const shows = await this.showRepository.find({
+        order: { ticketOpenDate: {
+          direction: sortOrder
+        } } 
+      });
+      return shows;
+    }
+    
+    const shows = await this.showRepository.find({
+      where: { category }, 
+      order: { ticketOpenDate: {
+        direction: sortOrder
+      } } 
+    });
+
+    return shows;
+  }
+
+  async findShowsByKeyword(keyword: string) {
+    const shows = await this.showRepository.find({
+      where: { title: Like(`%${keyword}%`) }
+    });
+    if (_.isEmpty(shows)) {
+      throw new NotFoundException('공연을 찾을 수 없습니다.');
+    }
+    return shows;
   }
 }
