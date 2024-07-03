@@ -2,6 +2,7 @@ import { IsArray, IsDate, IsEnum, IsNotEmpty, IsNumber, IsString, Validate } fro
 import { SHOW_CATEGORY } from "../types/show-category.type";
 import { Type } from "class-transformer";
 import { IsAfter } from "../validators/is-after.validators";
+import { IsSortedDatesValidator } from "../validators/is-sorted-dates.validator";
 
 export class CreateShowDto {
   @IsString()
@@ -45,6 +46,7 @@ export class CreateShowDto {
   @IsArray()
   @IsNotEmpty({ message: "공연 날짜와 시간을 입력해주세요." })
   @IsDate({ each: true }) // : Date 타입인지 확인하는 거임.
+  @Validate(IsSortedDatesValidator) // 시간순으로 정렬되있는지?
   showDate: Date[];
   // @IsDateString() : ISO 8601 형식의 날짜 문자열인지 확인하는 거임.
 
