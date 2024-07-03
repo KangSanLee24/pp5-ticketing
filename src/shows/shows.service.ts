@@ -18,7 +18,7 @@ export class ShowsService {
     private readonly showDetailRepository: Repository<ShowDetail>,
   ) {}
 
-  async createShow(createShowDto: CreateShowDto) {
+  async createShow(userId: number,createShowDto: CreateShowDto) {
     const {
       title,
       description,
@@ -33,6 +33,7 @@ export class ShowsService {
     } = createShowDto;
 
     const show = await this.showRepository.save({
+      user_id: userId,
       title,
       description,
       img,
@@ -44,13 +45,13 @@ export class ShowsService {
     });
 
     for (const date of showDate) {
-      await this.showDetailRepository.save({ showId: show.id, showDate: date, seat });
+      await this.showDetailRepository.save({ show_id: show.id, showDate: date, seat });
     }
 
     return { message: "공연 등록에 성공하였습니다." };
   }
 
-  async updateShow(showId: number, updateShowDto: UpdateShowDto) {
+  async updateShow(userId: number, showId: number, updateShowDto: UpdateShowDto) {
     const {
       title,
       description,
@@ -81,7 +82,7 @@ export class ShowsService {
 
     // showId에 맞는 show있나 체크
     const show = await this.showRepository.findOne({
-      where: { id: showId },
+      where: { id: showId, user_id: userId },
       relations: { showDetails: true },
     });
     if (_.isEmpty(show)) {
@@ -100,18 +101,18 @@ export class ShowsService {
 
     // showDate값이 있나 체크. 있으면 다 날리고 다시 만들기?
     if (!_.isEmpty(showDate)) {
-      await this.showDetailRepository.delete({ showId: show.id });
+      await this.showDetailRepository.delete({ show: show });
 
       for (const date of showDate) {
-        await this.showDetailRepository.save({ showId: show.id, showDate: date, seat });
+        await this.showDetailRepository.save({ show_id: show.id, showDate: date, seat });
       }
     }
 
     return { message: "공연 수정에 성공하였습니다." };
   }
 
-  async deleteShow(showId: number) {
-    const show = await this.showRepository.findOne({ where: { id: showId } });
+  async deleteShow(userId: number, showId: number) {
+    const show = await this.showRepository.findOne({ where: { id: showId, user_id: userId } });
     if (!show) {
       throw new NotFoundException("공연을 찾을 수 없습니다.");
     }

@@ -53,7 +53,7 @@ export class UsersService {
       throw new UnauthorizedException("비밀번호를 확인해주세요.");
     }
 
-    const payload = { email, sub: user.id, role: user.role };
+    const payload = { email, id: user.id, role: user.role };
     return {
       access_token: this.jwtService.sign(payload),
     };
