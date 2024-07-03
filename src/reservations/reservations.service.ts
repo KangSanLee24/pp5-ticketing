@@ -5,6 +5,7 @@ import { Connection, Repository } from "typeorm";
 import { Reservation } from "./entities/reservation.entity";
 import { ShowDetail } from "src/shows/entities/show-detail.entity";
 import _ from "lodash";
+import { RESERVATION_STATUS } from "./types/reservation-status.type";
 
 @Injectable()
 export class ReservationsService {
@@ -92,8 +93,6 @@ export class ReservationsService {
       throw new NotFoundException("사용자 아이디가 존재하지 않습니다.");
     }
 
-    // const reservations = await this.reservationsRepository.find({ where: { user: { id: userId } }, relations: ["showDetail"] });
-
     // QueryBuilder
     const reservations = await this.reservationsRepository
       .createQueryBuilder("reservation")
@@ -106,6 +105,7 @@ export class ReservationsService {
       throw new NotFoundException("예매 내역이 존재하지 않습니다.");
     }
 
+    // 성형
     const response = reservations.map((reservation) => ({
       id: reservation.id,
       status: reservation.status,
@@ -123,5 +123,63 @@ export class ReservationsService {
     }));
 
     return response;
+  }
+
+  async cancelReservation(reservationId: number, userId: number) {
+    const reservation = await this.reservationsRepository
+      .createQueryBuilder("reservation")
+      .innerJoinAndSelect("reservation.showDetail", "showDetail")
+      .innerJoinAndSelect("showDetail.show", "show")
+      .where("reservation.id = :reservationId", { reservationId })
+      .andWhere("reservation.user_id = :userId", { userId })
+      .getOne();
+
+    if (_.isNil(reservation)) {
+      throw new NotFoundException("예매 내역이 존재하지 않습니다.");
+    }
+
+    // 이미 취소한 예매를 또 취소할 수는 없다.
+    if (reservation.status === RESERVATION_STATUS.CANCELLED) {
+      throw new NotFoundException("이미 취소한 예매입니다.");
+    }
+
+    // 공연 시작 3시간 전까지만 예매를 취소할 수 있다.
+    if (reservation.showDetail.showDate.getTime() - new Date().getTime() < 3 * 60 * 60 * 1000) {
+      throw new NotFoundException("공연 시작 3시간 전까지만 예매를 취소할 수 있습니다.");
+    }
+
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    const { price } = reservation.showDetail.show;
+
+    // -- 트랜잭션 시작--
+    await this.connection.manager.transaction(
+      "SERIALIZABLE",
+      async (transactionalEntityManager) => {
+        // 예매상태를 취소로 변경.
+        await transactionalEntityManager.update(
+          Reservation,
+          { id: reservationId },
+          { status: RESERVATION_STATUS.CANCELLED },
+        );
+
+        // 예매 취소시 사용자의 point + price
+        await transactionalEntityManager.update(
+          User,
+          { id: userId },
+          { point: user.point + price },
+        );
+
+        // 예매 취소시 showDetail의 reservatedSeat -1
+        await transactionalEntityManager.update(
+          ShowDetail,
+          { id: reservation.showDetail.id },
+          { reservatedSeat: reservation.showDetail.reservatedSeat - 1 },
+        );
+      },
+    );
+    // -- 트랜잭션 끗! --
+
+    return { message: "예매 취소가 완료되었습니다." };
+    // return reservation;
   }
 }
