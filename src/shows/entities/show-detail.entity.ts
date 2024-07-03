@@ -4,10 +4,12 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from "typeorm";
 import { Show } from "./show.entity";
 import _ from "lodash";
+import { Reservation } from "src/reservations/entities/reservation.entity";
 
 @Entity({
   name: "show_details",
@@ -16,25 +18,24 @@ export class ShowDetail {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Show, (show) => show.showDetails)
-  @JoinColumn({ name: "show_id" })
-  showId: number;
-
   @Column({ type: "datetime", nullable: false })
   showDate: Date;
 
   @Column({ type: "int", nullable: false })
   seat: number;
 
-  // 남은 좌석 수
-  @Column({ type: "int", nullable: false })
-  restOfSeat: number;
+  // 예매된 좌석 수
+  @Column({ type: "int", nullable: false, default: 0 })
+  reservatedSeat: number;
 
-  // restOfSeat = seat - 예매된 좌석
-  @BeforeInsert()
-  setRestOfSeat() {
-    if (_.isNil(this.restOfSeat)) {
-      this.restOfSeat = this.seat;
-    }
-  }
+  // showId를 show로 변경
+  @ManyToOne((type) => Show, (show) => show.showDetails)
+  @JoinColumn({ name: "show_id", referencedColumnName: "id" })
+  show: Show;
+
+  @Column({ type: "int", name: "show_id" })
+  show_id: number;
+
+  @OneToMany(() => Reservation, (reservation) => reservation.showDetail)
+  reservations: Reservation[];
 }
