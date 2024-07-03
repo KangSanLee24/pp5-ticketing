@@ -41,10 +41,10 @@ export class ReservationsService {
       throw new NotFoundException("사용자의 금액이 부족합니다.");
     }
 
-    // IsolationLevel = "READ UNCOMMITTED" | "READ COMMITTED" | "REPEATABLE READ" | "SERIALIZABLE"; 
+    // IsolationLevel = "READ UNCOMMITTED" | "READ COMMITTED" | "REPEATABLE READ" | "SERIALIZABLE";
     const reservationTransaction = await this.connection.manager.transaction(
       "SERIALIZABLE",
-      async (transactionalEntityManager)=> {
+      async (transactionalEntityManager) => {
         const reservation = transactionalEntityManager.create(Reservation, { showDetail, user });
         // 예매 생성
         await transactionalEntityManager.save(reservation);
@@ -62,9 +62,10 @@ export class ReservationsService {
           { id: showDetailId },
           { reservatedSeat: showDetail.reservatedSeat + 1 },
         );
-      
+
         return reservation;
-    });
+      },
+    );
 
     // 성형
     const response = {
@@ -80,9 +81,9 @@ export class ReservationsService {
         location: showDetail.show.location,
         price: showDetail.show.price,
         showDate: showDetail.showDate,
-      }
+      },
     };
-  
+
     return response;
   }
 
@@ -95,16 +96,16 @@ export class ReservationsService {
 
     // QueryBuilder
     const reservations = await this.reservationsRepository
-    .createQueryBuilder("reservation")
-    .innerJoinAndSelect("reservation.showDetail", "showDetail")
-    .innerJoinAndSelect("showDetail.show", "show")
-    .where("reservation.user_id = :userId", { userId })
-    .getMany();
+      .createQueryBuilder("reservation")
+      .innerJoinAndSelect("reservation.showDetail", "showDetail")
+      .innerJoinAndSelect("showDetail.show", "show")
+      .where("reservation.user_id = :userId", { userId })
+      .getMany();
 
-    if(_.isEmpty(reservations)) {
+    if (_.isEmpty(reservations)) {
       throw new NotFoundException("예매 내역이 존재하지 않습니다.");
     }
-    
+
     const response = reservations.map((reservation) => ({
       id: reservation.id,
       status: reservation.status,
@@ -118,7 +119,7 @@ export class ReservationsService {
         location: reservation.showDetail.show.location,
         price: reservation.showDetail.show.price,
         showDate: reservation.showDetail.showDate,
-      }
+      },
     }));
 
     return response;

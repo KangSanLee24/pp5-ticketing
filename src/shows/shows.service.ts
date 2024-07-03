@@ -19,7 +19,7 @@ export class ShowsService {
     private readonly showDetailRepository: Repository<ShowDetail>,
   ) {}
 
-  async createShow(userId: number,createShowDto: CreateShowDto) {
+  async createShow(userId: number, createShowDto: CreateShowDto) {
     const {
       title,
       description,
@@ -132,7 +132,7 @@ export class ShowsService {
     return show;
   }
 
-  // 공연 목록 조회 API 
+  // 공연 목록 조회 API
   async findShows(query: FindShowsQuery) {
     const { category, sort } = query;
     const today = getToday();
@@ -169,7 +169,7 @@ export class ShowsService {
     }
 
     // 추가적으로 showDetail을 뒤져서 showOpenDate랑 showCloseDate를 만들거임.
-    const showsWithDetails = shows.map(async (show)=> {
+    const showsWithDetails = shows.map(async (show) => {
       const showDetails = await this.showDetailRepository.find({
         where: { show_id: show.id },
         order: {
@@ -180,7 +180,8 @@ export class ShowsService {
       });
 
       const showOpenDate = showDetails.length > 0 ? showDetails[0].showDate : null;
-      const showCloseDate = showDetails.length > 0 ? showDetails[showDetails.length - 1].showDate : null;
+      const showCloseDate =
+        showDetails.length > 0 ? showDetails[showDetails.length - 1].showDate : null;
 
       return {
         ...show,
