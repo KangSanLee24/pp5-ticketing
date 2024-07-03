@@ -11,7 +11,7 @@ import { ShowsModule } from "./shows/shows.module";
 import { User } from "./users/entities/user.entity";
 import { Show } from "./shows/entities/show.entity";
 import { ShowDetail } from "./shows/entities/show-detail.entity";
-import { ReservationsModule } from './reservations/reservations.module';
+import { ReservationsModule } from "./reservations/reservations.module";
 import { Reservation } from "./reservations/entities/reservation.entity";
 
 const typeOrmModuleOptions = {
