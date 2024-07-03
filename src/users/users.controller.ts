@@ -31,11 +31,4 @@ export class UsersController {
   async getMyInfo(@UserInfo() user: User) {
     return await this.usersService.findByEmail(user.email);
   }
-
-  //   // 예매 기록 조회
-  //   @UseGuards(AuthGuard('jwt'))
-  //   @Get('reservations')
-  //   async getMyReservations(@UserInfo() user: User) {
-  //     return await this.reservationsService.findByEmail(user.email);
-  //   }
 }
