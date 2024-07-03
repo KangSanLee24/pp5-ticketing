@@ -1,5 +1,5 @@
 import _ from "lodash";
-import { Like, Repository } from "typeorm";
+import { Like, MoreThan, Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 
@@ -8,6 +8,7 @@ import { ShowDetail } from "./entities/show-detail.entity";
 import { CreateShowDto } from "./dto/create-show.dto";
 import { UpdateShowDto } from "./dto/update-show.dto";
 import { FindShowsQuery } from "./dto/find-shows-query.dto";
+import { getToday } from "src/utils/get-today.util";
 
 @Injectable()
 export class ShowsService {
@@ -131,10 +132,12 @@ export class ShowsService {
     return show;
   }
 
-  // 카테고리 없으면 싹 다 검색
+  // 공연 목록 조회 API 
   async findShows(query: FindShowsQuery) {
     const { category, sort } = query;
+    const today = getToday();
 
+    // sortOrder 기본값: ASC
     let sortOrder: "ASC" | "DESC" = "ASC";
     if (_.isEmpty(sort)) {
       sortOrder = "ASC";
@@ -142,32 +145,57 @@ export class ShowsService {
       sortOrder = sort;
     }
 
+    let shows: Show[];
+    // 카테고리 없으면 싹 다 검색
     if (_.isEmpty(category)) {
-      const shows = await this.showRepository.find({
+      shows = await this.showRepository.find({
+        where: { ticketCloseDate: MoreThan(today) },
         order: {
           ticketOpenDate: {
             direction: sortOrder,
           },
         },
       });
-      return shows;
+    } else {
+      // 카테고리 있으면 해당 카테고리 검색
+      shows = await this.showRepository.find({
+        where: { category, ticketCloseDate: MoreThan(today) },
+        order: {
+          ticketOpenDate: {
+            direction: sortOrder,
+          },
+        },
+      });
     }
 
-    const shows = await this.showRepository.find({
-      where: { category },
-      order: {
-        ticketOpenDate: {
-          direction: sortOrder,
+    // 추가적으로 showDetail을 뒤져서 showOpenDate랑 showCloseDate를 만들거임.
+    const showsWithDetails = shows.map(async (show)=> {
+      const showDetails = await this.showDetailRepository.find({
+        where: { show_id: show.id },
+        order: {
+          showDate: {
+            direction: "ASC",
+          },
         },
-      },
+      });
+
+      const showOpenDate = showDetails.length > 0 ? showDetails[0].showDate : null;
+      const showCloseDate = showDetails.length > 0 ? showDetails[showDetails.length - 1].showDate : null;
+
+      return {
+        ...show,
+        showOpenDate,
+        showCloseDate,
+      };
     });
 
-    return shows;
+    return await Promise.all(showsWithDetails);
   }
 
   async findShowsByKeyword(keyword: string) {
+    const today = getToday();
     const shows = await this.showRepository.find({
-      where: { title: Like(`%${keyword}%`) },
+      where: { title: Like(`%${keyword}%`), ticketCloseDate: MoreThan(today) },
     });
     if (_.isEmpty(shows)) {
       throw new NotFoundException("공연을 찾을 수 없습니다.");
