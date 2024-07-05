@@ -15,20 +15,20 @@ export class ReservationsController {
   @Post(":showDetailId")
   async createReservation(@Param("showDetailId") showDetailId: number, @UserInfo() user: User) {
     const userId = +user.id;
-    return this.reservationsService.createReservation(showDetailId, userId);
+    return this.reservationsService.createReservation({ showDetailId, userId });
   }
 
   // 예매 내역 조회 API
   @Get("")
   async getReservations(@UserInfo() user: User) {
     const userId = +user.id;
-    return this.reservationsService.getReservations(userId);
+    return this.reservationsService.getReservations({ userId });
   }
 
   // 예매 취소 API
   @Patch(":reservationId")
   async cancelReservation(@Param("reservationId") reservationId: number, @UserInfo() user: User) {
     const userId = +user.id;
-    return this.reservationsService.cancelReservation(reservationId, userId);
+    return this.reservationsService.cancelReservation({ reservationId, userId });
   }
 }

@@ -30,11 +30,11 @@ export class ShowDetail {
 
   // showId를 show로 변경
   @ManyToOne((type) => Show, (show) => show.showDetails)
-  @JoinColumn({ name: "show_id", referencedColumnName: "id" })
+  @JoinColumn({ referencedColumnName: "id" })
   show: Show;
 
-  @Column({ type: "int", name: "show_id" })
-  show_id: number;
+  @Column({ type: "int" })
+  showId: number;
 
   @OneToMany(() => Reservation, (reservation) => reservation.showDetail)
   reservations: Reservation[];

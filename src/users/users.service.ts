@@ -18,13 +18,23 @@ export class UsersService {
     private readonly configService: ConfigService,
   ) {}
 
-  async signUp(email: string, password: string, passwordConfirm: string, nickname: string) {
+  async signUp({
+    email,
+    password,
+    passwordConfirm,
+    nickname,
+  }: {
+    email: string;
+    password: string;
+    passwordConfirm: string;
+    nickname: string;
+  }): Promise<{ message: string }> {
     // password = passwordConfirm ?
     if (password !== passwordConfirm) {
       throw new ConflictException("비밀번호가 일치하지 않습니다.");
     }
 
-    const existingUser = await this.findByEmail(email);
+    const existingUser = await this.findByEmail({ email });
     if (existingUser) {
       throw new ConflictException("이미 해당 이메일로 가입된 사용자가 있습니다.");
     }
@@ -39,8 +49,13 @@ export class UsersService {
 
     return { message: "회원가입에 성공하셨습니다." };
   }
-
-  async signIn(email: string, password: string) {
+  async signIn({
+    email,
+    password,
+  }: {
+    email: string;
+    password: string;
+  }): Promise<{ accessToken: string }> {
     const user = await this.userRepository.findOne({
       select: ["id", "email", "password"],
       where: { email },
@@ -55,11 +70,10 @@ export class UsersService {
 
     const payload = { email, id: user.id, role: user.role };
     return {
-      access_token: this.jwtService.sign(payload),
+      accessToken: this.jwtService.sign(payload),
     };
   }
-
-  async findByEmail(email: string) {
+  async findByEmail({ email }: { email: string }): Promise<User> {
     return await this.userRepository.findOneBy({ email });
   }
 }

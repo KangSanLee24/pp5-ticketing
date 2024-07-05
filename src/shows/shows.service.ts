@@ -19,7 +19,97 @@ export class ShowsService {
     private readonly showDetailRepository: Repository<ShowDetail>,
   ) {}
 
-  async createShow(userId: number, createShowDto: CreateShowDto) {
+  // 공연 목록 조회 API
+  async findShows({ query }: { query: FindShowsQuery }): Promise<Show[]> {
+    const { category, sort } = query;
+    const today = getToday();
+
+    // sortOrder 기본값: ASC
+    let sortOrder: "ASC" | "DESC" = "ASC";
+    if (_.isEmpty(sort)) {
+      sortOrder = "ASC";
+    } else {
+      sortOrder = sort;
+    }
+
+    let shows: Show[];
+    // 카테고리 없으면 싹 다 검색 + 이쁘게 만들고 싶다. 두번 적는거 싫다.
+    if (_.isEmpty(category)) {
+      shows = await this.showRepository.find({
+        where: { ticketCloseDate: MoreThan(today) },
+        order: {
+          ticketOpenDate: {
+            direction: sortOrder,
+          },
+        },
+      });
+    } else {
+      // 카테고리 있으면 해당 카테고리 검색
+      shows = await this.showRepository.find({
+        where: { category, ticketCloseDate: MoreThan(today) },
+        order: {
+          ticketOpenDate: {
+            direction: sortOrder,
+          },
+        },
+      });
+    }
+
+    // 추가적으로 showDetail을 뒤져서 showOpenDate랑 showCloseDate를 만들거임.
+    const showsWithDetails = shows.map(async (show) => {
+      const showDetails = await this.showDetailRepository.find({
+        where: { showId: show.id },
+        order: {
+          showDate: {
+            direction: "ASC",
+          },
+        },
+      });
+
+      // 공연 상세가 있으면 첫번째 일시를 showOpenDate로, 마지막 일시를 showCloseDate로 설정
+      const showOpenDate = showDetails.length > 0 ? showDetails[0].showDate : null;
+      const showCloseDate =
+        showDetails.length > 0 ? showDetails[showDetails.length - 1].showDate : null;
+
+      return {
+        ...show,
+        showOpenDate,
+        showCloseDate,
+      };
+    });
+
+    return await Promise.all(showsWithDetails);
+  }
+
+  async findOne({ showId }: { showId: number }): Promise<Show> {
+    const show = await this.showRepository.findOne({
+      where: { id: showId },
+      relations: { showDetails: true },
+    });
+    if (_.isNil(show)) {
+      throw new NotFoundException("공연을 찾을 수 없습니다.");
+    }
+    return show;
+  }
+
+  async findShowsByKeyword({ keyword }: { keyword: string }): Promise<Show[]> {
+    const today = getToday();
+    const shows = await this.showRepository.find({
+      where: { title: Like(`%${keyword}%`), ticketCloseDate: MoreThan(today) },
+    });
+    if (_.isEmpty(shows)) {
+      throw new NotFoundException("공연을 찾을 수 없습니다.");
+    }
+    return shows;
+  }
+
+  async createShow({
+    userId,
+    createShowDto,
+  }: {
+    userId: number;
+    createShowDto: CreateShowDto;
+  }): Promise<{ message: string }> {
     const {
       title,
       description,
@@ -34,7 +124,7 @@ export class ShowsService {
     } = createShowDto;
 
     const show = await this.showRepository.save({
-      user_id: userId,
+      userId: userId,
       title,
       description,
       img,
@@ -46,13 +136,21 @@ export class ShowsService {
     });
 
     for (const date of showDate) {
-      await this.showDetailRepository.save({ show_id: show.id, showDate: date, seat });
+      await this.showDetailRepository.save({ showId: show.id, showDate: date, seat });
     }
 
     return { message: "공연 등록에 성공하였습니다." };
   }
 
-  async updateShow(userId: number, showId: number, updateShowDto: UpdateShowDto) {
+  async updateShow({
+    userId,
+    showId,
+    updateShowDto,
+  }: {
+    userId: number;
+    showId: number;
+    updateShowDto: UpdateShowDto;
+  }) {
     const {
       title,
       description,
@@ -83,7 +181,7 @@ export class ShowsService {
 
     // showId에 맞는 show있나 체크
     const show = await this.showRepository.findOne({
-      where: { id: showId, user_id: userId },
+      where: { id: showId, userId: userId },
       relations: { showDetails: true },
     });
     if (_.isEmpty(show)) {
@@ -100,107 +198,24 @@ export class ShowsService {
 
     await this.showRepository.save(show);
 
-    // showDate값이 있나 체크. 있으면 다 날리고 다시 만들기?
+    // showDate값이 있나 체크. 있으면 다 날리고 다시 만들기
     if (!_.isEmpty(showDate)) {
       await this.showDetailRepository.delete({ show: show });
 
       for (const date of showDate) {
-        await this.showDetailRepository.save({ show_id: show.id, showDate: date, seat });
+        await this.showDetailRepository.save({ showId: show.id, showDate: date, seat });
       }
     }
 
     return { message: "공연 수정에 성공하였습니다." };
   }
 
-  async deleteShow(userId: number, showId: number) {
-    const show = await this.showRepository.findOne({ where: { id: showId, user_id: userId } });
+  async deleteShow({ userId, showId }: { userId: number; showId: number }) {
+    const show = await this.showRepository.findOne({ where: { id: showId, userId: userId } });
     if (!show) {
       throw new NotFoundException("공연을 찾을 수 없습니다.");
     }
 
     await this.showRepository.delete({ id: showId });
-  }
-
-  async findOne(showId: number) {
-    const show = await this.showRepository.findOne({
-      where: { id: showId },
-      relations: { showDetails: true },
-    });
-    if (!show) {
-      throw new NotFoundException("공연을 찾을 수 없습니다.");
-    }
-    return show;
-  }
-
-  // 공연 목록 조회 API
-  async findShows(query: FindShowsQuery) {
-    const { category, sort } = query;
-    const today = getToday();
-
-    // sortOrder 기본값: ASC
-    let sortOrder: "ASC" | "DESC" = "ASC";
-    if (_.isEmpty(sort)) {
-      sortOrder = "ASC";
-    } else {
-      sortOrder = sort;
-    }
-
-    let shows: Show[];
-    // 카테고리 없으면 싹 다 검색
-    if (_.isEmpty(category)) {
-      shows = await this.showRepository.find({
-        where: { ticketCloseDate: MoreThan(today) },
-        order: {
-          ticketOpenDate: {
-            direction: sortOrder,
-          },
-        },
-      });
-    } else {
-      // 카테고리 있으면 해당 카테고리 검색
-      shows = await this.showRepository.find({
-        where: { category, ticketCloseDate: MoreThan(today) },
-        order: {
-          ticketOpenDate: {
-            direction: sortOrder,
-          },
-        },
-      });
-    }
-
-    // 추가적으로 showDetail을 뒤져서 showOpenDate랑 showCloseDate를 만들거임.
-    const showsWithDetails = shows.map(async (show) => {
-      const showDetails = await this.showDetailRepository.find({
-        where: { show_id: show.id },
-        order: {
-          showDate: {
-            direction: "ASC",
-          },
-        },
-      });
-
-      const showOpenDate = showDetails.length > 0 ? showDetails[0].showDate : null;
-      const showCloseDate =
-        showDetails.length > 0 ? showDetails[showDetails.length - 1].showDate : null;
-
-      return {
-        ...show,
-        showOpenDate,
-        showCloseDate,
-      };
-    });
-
-    return await Promise.all(showsWithDetails);
-  }
-
-  async findShowsByKeyword(keyword: string) {
-    const today = getToday();
-    const shows = await this.showRepository.find({
-      where: { title: Like(`%${keyword}%`), ticketCloseDate: MoreThan(today) },
-    });
-    if (_.isEmpty(shows)) {
-      throw new NotFoundException("공연을 찾을 수 없습니다.");
-    }
-    return shows;
   }
 }

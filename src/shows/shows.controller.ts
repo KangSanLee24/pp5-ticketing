@@ -27,30 +27,26 @@ export class ShowsController {
 
   @Get()
   async findShows(@Query() query: FindShowsQuery) {
-    return this.showsService.findShows(query);
+    return this.showsService.findShows({ query });
   }
 
   // 공연 상세 조회
   @Get(":id")
   async findShow(@Param("id") showId: number) {
-    return this.showsService.findOne(showId);
+    return this.showsService.findOne({ showId });
   }
 
   // keyword로 검색
   @Get("search/:keyword")
-  async findShowByKeyword(
-    @Param("keyword") keyword: string
-  ) {
-    return this.showsService.findShowsByKeyword(keyword);
+  async findShowByKeyword(@Param("keyword") keyword: string) {
+    return this.showsService.findShowsByKeyword({ keyword });
   }
 
   @Roles(ROLE.ADMIN)
   @Post()
-  async createShow(
-    @UserInfo() user: User, 
-    @Body() createShowDto: CreateShowDto) {
+  async createShow(@UserInfo() user: User, @Body() createShowDto: CreateShowDto) {
     const userId = +user.id;
-    return this.showsService.createShow(userId, createShowDto);
+    return this.showsService.createShow({ userId, createShowDto });
   }
 
   @Roles(ROLE.ADMIN)
@@ -58,19 +54,16 @@ export class ShowsController {
   async updateShow(
     @UserInfo() user: User,
     @Param("id") showId: number,
-    @Body() updateShowDto: UpdateShowDto
+    @Body() updateShowDto: UpdateShowDto,
   ) {
     const userId = +user.id;
-    return this.showsService.updateShow(userId, showId, updateShowDto);
+    return this.showsService.updateShow({ userId, showId, updateShowDto });
   }
 
   @Roles(ROLE.ADMIN)
   @Delete(":id")
-  async deleteShow(
-    @UserInfo() user: User,
-    @Param("id") showId: number
-  ) {
+  async deleteShow(@UserInfo() user: User, @Param("id") showId: number) {
     const userId = +user.id;
-    return this.showsService.deleteShow(userId, showId);
+    return this.showsService.deleteShow({ userId, showId });
   }
 }

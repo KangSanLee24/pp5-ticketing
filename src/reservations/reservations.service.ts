@@ -19,12 +19,18 @@ export class ReservationsService {
     private connection: Connection,
   ) {}
 
-  async createReservation(showDetailId: number, userId: number) {
-    // showDetailId에 해당되는 공연이 있는지, restOfSeat가 있는지 확인
-    const showDetail = await this.showDetailsRepository.findOne({
+  async createReservation({ showDetailId, userId }: { showDetailId: number; userId: number }) {
+    // DTO 통과한게 아니여서 showDetailId는 체크해야된다.
+    if (_.isNil(showDetailId) || !_.isNumber(showDetailId)) {
+      throw new NotFoundException("공연 상세 ID를 알맞게 입력해 주세요.");
+    }
+
+    // showDetailId에 해당되는 공연이 있는지, 남은 좌석이 있는지 확인
+    const showDetail: ShowDetail | null = await this.showDetailsRepository.findOne({
       where: { id: showDetailId },
       relations: ["show"],
     });
+
     if (_.isNil(showDetail)) {
       throw new NotFoundException("해당 공연이 존재하지 않습니다.");
     }
@@ -32,8 +38,8 @@ export class ReservationsService {
       throw new NotFoundException("예매 가능한 좌석이 남아있지 않습니다.");
     }
 
-    // userId에 해당되는 사용자의 price가 show의 가격보다 충분한지
-    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    // userId에 해당되는 사용자의 point가 show의 가격보다 충분한지
+    const user: User | null = await this.usersRepository.findOne({ where: { id: userId } });
     const { price } = showDetail.show;
     if (_.isNil(user)) {
       throw new NotFoundException("해당 사용자가 존재하지 않습니다.");
@@ -46,7 +52,10 @@ export class ReservationsService {
     const reservationTransaction = await this.connection.manager.transaction(
       "SERIALIZABLE",
       async (transactionalEntityManager) => {
-        const reservation = transactionalEntityManager.create(Reservation, { showDetail, user });
+        const reservation: Reservation = transactionalEntityManager.create(Reservation, {
+          showDetail,
+          user,
+        });
         // 예매 생성
         await transactionalEntityManager.save(reservation);
 
@@ -75,8 +84,8 @@ export class ReservationsService {
       createdAt: reservationTransaction.createdAt,
       updatedAt: reservationTransaction.updatedAt,
       shows: {
-        show_id: showDetail.show.id,
-        show_detail_id: showDetail.id,
+        showId: showDetail.show.id,
+        showDetailId: showDetail.id,
         title: showDetail.show.title,
         category: showDetail.show.category,
         location: showDetail.show.location,
@@ -88,17 +97,17 @@ export class ReservationsService {
     return response;
   }
 
-  async getReservations(userId: number) {
+  async getReservations({ userId }: { userId: number }) {
     if (_.isNil(userId)) {
-      throw new NotFoundException("사용자 아이디가 존재하지 않습니다.");
+      throw new NotFoundException("사용자 ID가 존재하지 않습니다.");
     }
 
     // QueryBuilder
-    const reservations = await this.reservationsRepository
+    const reservations: Reservation[] = await this.reservationsRepository
       .createQueryBuilder("reservation")
       .innerJoinAndSelect("reservation.showDetail", "showDetail")
       .innerJoinAndSelect("showDetail.show", "show")
-      .where("reservation.user_id = :userId", { userId })
+      .where("reservation.userId = :userId", { userId })
       .getMany();
 
     if (_.isEmpty(reservations)) {
@@ -112,8 +121,8 @@ export class ReservationsService {
       createdAt: reservation.createdAt,
       updatedAt: reservation.updatedAt,
       shows: {
-        show_id: reservation.showDetail.show.id,
-        show_detail_id: reservation.showDetail.id,
+        showId: reservation.showDetail.show.id,
+        showDetailId: reservation.showDetail.id,
         title: reservation.showDetail.show.title,
         category: reservation.showDetail.show.category,
         location: reservation.showDetail.show.location,
@@ -125,15 +134,38 @@ export class ReservationsService {
     return response;
   }
 
-  async cancelReservation(reservationId: number, userId: number) {
-    const reservation = await this.reservationsRepository
-      .createQueryBuilder("reservation")
-      .innerJoinAndSelect("reservation.showDetail", "showDetail")
-      .innerJoinAndSelect("showDetail.show", "show")
-      .where("reservation.id = :reservationId", { reservationId })
-      .andWhere("reservation.user_id = :userId", { userId })
-      .getOne();
+  async cancelReservation({ reservationId, userId }: { reservationId: number; userId: number }) {
+    // DTO를 통해 받은게 아니여서 reservationId는 체크해야한다.
+    if (_.isNil(reservationId) || !_.isNumber(reservationId)) {
+      throw new NotFoundException("예매 ID를 알맞게 입력해 주세요.");
+    }
 
+    // 존재하는 사용자 ID냐?
+    const user: User | null = await this.usersRepository.findOne({ where: { id: userId } });
+    if (_.isNil(user)) {
+      throw new NotFoundException("해당 사용자가 존재하지 않습니다.");
+    }
+
+    // Row query
+    const reservation: Reservation | null = await this.reservationsRepository.query(
+      `
+      SELECT
+        reservation.*,
+        showDetail.*,
+        show.*
+      FROM reservations reservation
+        INNER JOIN show_details showDetail 
+        ON reservation.showDetailId = showDetail.id
+        INNER JOIN shows show 
+        ON showDetail.showId = show.id
+      WHERE reservation.id = :$1
+        AND reservation.userId = :$2
+      `,
+      [reservationId, userId],
+    );
+    const { price } = reservation.showDetail.show;
+
+    // 예매하긴 했는지 체크
     if (_.isNil(reservation)) {
       throw new NotFoundException("예매 내역이 존재하지 않습니다.");
     }
@@ -147,9 +179,6 @@ export class ReservationsService {
     if (reservation.showDetail.showDate.getTime() - new Date().getTime() < 3 * 60 * 60 * 1000) {
       throw new NotFoundException("공연 시작 3시간 전까지만 예매를 취소할 수 있습니다.");
     }
-
-    const user = await this.usersRepository.findOne({ where: { id: userId } });
-    const { price } = reservation.showDetail.show;
 
     // -- 트랜잭션 시작--
     await this.connection.manager.transaction(
