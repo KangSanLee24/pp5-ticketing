@@ -21,17 +21,15 @@ const mockRepository = () => ({
   findOneBy: jest.fn(),
   save: jest.fn(),
 });
-
 const mockJwtService = {
   sign: jest.fn(),
 };
-
 const configService = {
   get: jest.fn(),
 };
 
 describe("UsersService", () => {
-  let service: UsersService;
+  let usersService: UsersService;
   let mockUsersRepository: MockUsersRepository<User>;
 
   beforeEach(async () => {
@@ -39,21 +37,22 @@ describe("UsersService", () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
-        //  mockRepository로 만든 fake repo들은 다른 typeorm의 entity들이 공유해서는 안되기 때문에, 함수 형태로 작성하는 것이 좋다.
+        // mockRepository로 만든 fake repo들은 다른 typeorm의 entity들이 공유해서는 안되기 때문에,
+        // 함수 형태로 작성하는 것이 좋다.
         { provide: getRepositoryToken(User), useValue: mockRepository() },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: configService },
       ],
     }).compile();
 
-    service = module.get<UsersService>(UsersService);
+    usersService = module.get<UsersService>(UsersService);
 
     mockUsersRepository = module.get(getRepositoryToken(User));
   });
 
   // 이게 뭔지 찾아봐야합니다.
   it("should be defined", () => {
-    expect(service).toBeDefined();
+    expect(usersService).toBeDefined();
   });
 
   describe("signUp", () => {
@@ -67,9 +66,9 @@ describe("UsersService", () => {
 
       // When
       // signUp() : Prpmise니까 await
-      await expect(service.signUp({ email, password, passwordConfirm, nickname })).rejects.toThrow(
-        new ConflictException(mockReturn.message),
-      );
+      await expect(
+        usersService.signUp({ email, password, passwordConfirm, nickname }),
+      ).rejects.toThrow(new ConflictException(mockReturn.message));
 
       // Then
       expect(password).not.toEqual(passwordConfirm);
@@ -97,9 +96,9 @@ describe("UsersService", () => {
       mockUsersRepository.findOneBy.mockResolvedValue(mockUser);
 
       // When
-      await expect(service.signUp({ email, password, passwordConfirm, nickname })).rejects.toThrow(
-        new ConflictException(mockReturn.message),
-      );
+      await expect(
+        usersService.signUp({ email, password, passwordConfirm, nickname }),
+      ).rejects.toThrow(new ConflictException(mockReturn.message));
 
       // Then
       expect(password).toEqual(passwordConfirm);
@@ -137,7 +136,7 @@ describe("UsersService", () => {
       const mockReturn = { message: "회원가입에 성공하셨습니다." };
 
       // When
-      const result = await service.signUp({ email, password, passwordConfirm, nickname });
+      const result = await usersService.signUp({ email, password, passwordConfirm, nickname });
 
       // Then
       expect(password).toEqual(passwordConfirm);
@@ -155,7 +154,7 @@ describe("UsersService", () => {
       expect(result).toEqual(mockReturn);
     });
   });
-  //
+
   describe("signIn", () => {
     it("이메일이 일치하는 사용자가 없을 경우, status:401, message: 이메일을 확인해주세요.", async () => {
       // Given
@@ -166,7 +165,7 @@ describe("UsersService", () => {
       const mockReturn = { message: "이메일을 확인해주세요." };
 
       // When
-      await expect(service.signIn({ email, password })).rejects.toThrow(
+      await expect(usersService.signIn({ email, password })).rejects.toThrow(
         new UnauthorizedException(mockReturn.message),
       );
 
@@ -188,7 +187,7 @@ describe("UsersService", () => {
       const mockUser: UserWithoutRelations = {
         id: 1,
         email,
-        password,
+        password: hashedPassword,
         nickname,
         role: ROLE.USER,
         point: 0,
@@ -199,13 +198,13 @@ describe("UsersService", () => {
         .spyOn(bcrypt, "compare")
         .mockImplementation((password, hashedPassword) => Promise.resolve(false));
       const payload = { email, id: mockUser.id, role: mockUser.role };
-      mockJwtService.sign.mockReturnValue(payload); // sign 비동기 함수 아님.
+      mockJwtService.sign.mockResolvedValue(payload);
 
       mockUsersRepository.findOne.mockResolvedValue(mockUser);
       const mockReturn = { message: "비밀번호를 확인해주세요." };
 
       // When
-      await expect(service.signIn({ email, password })).rejects.toThrow(
+      await expect(usersService.signIn({ email, password })).rejects.toThrow(
         new UnauthorizedException(mockReturn.message),
       );
 
@@ -218,7 +217,7 @@ describe("UsersService", () => {
       expect(email).toEqual(mockUser.email);
 
       expect(compare).toHaveBeenCalledTimes(1);
-      expect(compare).toHaveBeenCalledWith(password, hashedPassword);
+      expect(compare).toHaveBeenCalledWith(password, hashedPassword); // ????
       expect(compare).toBeTruthy();
     });
     it("로그인에 성공했을 경우, accessToken : `accessToken`", async () => {
@@ -245,9 +244,9 @@ describe("UsersService", () => {
 
       // When
       mockUsersRepository.findOne.mockResolvedValue(mockUser);
-      mockJwtService.sign.mockResolvedValue(mockReturn.accessToken);
+      mockJwtService.sign.mockReturnValue(mockReturn.accessToken); // sign 비동기 함수 아님.
 
-      const result = await service.signIn({ email, password });
+      const result = await usersService.signIn({ email, password });
 
       // Then
       expect(mockUsersRepository.findOne).toHaveBeenCalledTimes(1);
@@ -255,6 +254,8 @@ describe("UsersService", () => {
         select: ["id", "email", "password"],
         where: { email },
       });
+      console.log(result);
+      console.log(mockReturn);
       expect(mockJwtService.sign).toHaveBeenCalledTimes(1);
       expect(mockJwtService.sign).toHaveBeenCalledWith({ email, id: 1, role: ROLE.USER });
       expect(result).toEqual(mockReturn);
@@ -279,7 +280,7 @@ describe("UsersService", () => {
       };
       // When
       mockUsersRepository.findOneBy.mockResolvedValue(mockReturn);
-      const result = await service.findByEmail({ email });
+      const result = await usersService.findByEmail({ email });
 
       // Then
       expect(mockUsersRepository.findOneBy).toHaveBeenCalledTimes(1);
@@ -289,5 +290,3 @@ describe("UsersService", () => {
     });
   });
 });
-
-// 아니 mockReturnValue랑 mockResolvedValue 때문에 몇번을 갈아 엎냐고 바보야!!
