@@ -146,7 +146,7 @@ export class ReservationsService {
       throw new NotFoundException("해당 사용자가 존재하지 않습니다.");
     }
 
-    // Row query
+    // Row Query
     const reservation: Reservation | null = await this.reservationsRepository.query(
       `
       SELECT
@@ -180,7 +180,7 @@ export class ReservationsService {
       throw new NotFoundException("공연 시작 3시간 전까지만 예매를 취소할 수 있습니다.");
     }
 
-    // -- 트랜잭션 시작--
+    // -- 트랜잭션 시작-- >> queryRunner로 바꿔서 트랜잭션 구현해보기
     await this.connection.manager.transaction(
       "SERIALIZABLE",
       async (transactionalEntityManager) => {
