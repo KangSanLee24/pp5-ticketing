@@ -35,17 +35,17 @@ export class Reservation {
 
   // userId를 user로 변경
   @ManyToOne((type) => User, (user) => user.reservations)
-  @JoinColumn({ name: "user_id", referencedColumnName: "id" })
+  @JoinColumn({ referencedColumnName: "id" })
   user: User;
 
-  @Column({ type: "int", name: "user_id" })
-  user_id: number;
+  @Column({ type: "int" })
+  userId: number;
 
   // showDetailId를 showDetail로 변경
   @ManyToOne((type) => ShowDetail, (showDetail) => showDetail.reservations)
-  @JoinColumn({ name: "show_detail_id", referencedColumnName: "id" })
+  @JoinColumn({ referencedColumnName: "id" })
   showDetail: ShowDetail;
 
-  @Column({ type: "int", name: "show_detail_id" })
-  show_detail_id: number;
+  @Column({ type: "int" })
+  showDetailId: number;
 }

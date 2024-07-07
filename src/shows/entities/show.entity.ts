@@ -50,11 +50,11 @@ export class Show {
   updatedAt: Date;
 
   @ManyToOne(() => User, (user) => user.shows)
-  @JoinColumn({ name: "user_id", referencedColumnName: "id" })
+  @JoinColumn({ referencedColumnName: "id" })
   user: User;
 
-  @Column({ type: "int", name: "user_id" })
-  user_id: number;
+  @Column({ type: "int" })
+  userId: number;
 
   @OneToMany(() => ShowDetail, (showDetail) => showDetail.show)
   showDetails: ShowDetail[];
