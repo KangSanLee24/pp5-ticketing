@@ -124,7 +124,7 @@ export class ShowsService {
     } = createShowDto;
 
     const show = await this.showRepository.save({
-      userId: userId,
+      userId,
       title,
       description,
       img,
