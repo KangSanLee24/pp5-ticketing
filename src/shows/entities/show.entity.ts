@@ -32,7 +32,7 @@ export class Show {
   category: SHOW_CATEGORY;
 
   @Column({ type: "varchar", length: "255", nullable: false })
-  location: string;
+  address: string;
 
   @Column({ type: "int", nullable: false })
   price: number;

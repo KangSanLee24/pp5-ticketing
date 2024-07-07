@@ -25,7 +25,7 @@ export class ShowsService {
       description,
       img,
       category,
-      location,
+      address,
       price,
       ticketOpenDate,
       ticketCloseDate,
@@ -39,7 +39,7 @@ export class ShowsService {
       description,
       img,
       category,
-      location,
+      address,
       price,
       ticketOpenDate,
       ticketCloseDate,
@@ -58,7 +58,7 @@ export class ShowsService {
       description,
       img,
       category,
-      location,
+      address,
       price,
       ticketOpenDate,
       ticketCloseDate,
@@ -71,7 +71,7 @@ export class ShowsService {
       _.isEmpty(description) &&
       _.isEmpty(img) &&
       _.isEmpty(category) &&
-      _.isEmpty(location) &&
+      _.isEmpty(address) &&
       _.isEmpty(price) &&
       _.isEmpty(ticketOpenDate) &&
       _.isEmpty(ticketCloseDate) &&
@@ -93,7 +93,7 @@ export class ShowsService {
     show.description = description ? description : show.description;
     show.img = img ? img : show.img;
     show.category = category ? category : show.category;
-    show.location = location ? location : show.location;
+    show.address = address ? address : show.address;
     show.price = price ? price : show.price;
     show.ticketOpenDate = ticketOpenDate ? ticketOpenDate : show.ticketOpenDate;
     show.ticketCloseDate = ticketCloseDate ? ticketCloseDate : show.ticketCloseDate;
