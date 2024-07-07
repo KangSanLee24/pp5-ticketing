@@ -15,4 +15,28 @@ describe("UsersController", () => {
   it("should be defined", () => {
     expect(controller).toBeDefined();
   });
+
+  describe("sign-up", () => {
+    it("asdfasdfs", async () => {
+      // Given
+      // When
+      // Then
+    });
+  });
+
+  describe("sign-in", () => {
+    it("asdfasdfs", async () => {
+      // Given
+      // When
+      // Then
+    });
+  });
+
+  describe("123456789", () => {
+    it("asdfasdfs", async () => {
+      // Given
+      // When
+      // Then
+    });
+  });
 });

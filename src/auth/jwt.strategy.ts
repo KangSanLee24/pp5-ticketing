@@ -6,7 +6,7 @@ import { ConfigService } from "@nestjs/config";
 import { PassportStrategy } from "@nestjs/passport";
 
 import { UsersService } from "src/users/users.service";
-import { NotFoundError } from "rxjs";
+import { NotFoundException } from "@nestjs/common";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -24,7 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: any) {
     const user = await this.usersService.findByEmail(payload.email);
     if (_.isNil(user)) {
-      throw new NotFoundError("해당하는 사용자를 찾을 수 없습니다.");
+      throw new NotFoundException("해당하는 사용자를 찾을 수 없습니다.");
     }
 
     return user;

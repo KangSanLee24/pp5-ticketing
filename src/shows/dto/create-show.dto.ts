@@ -1,4 +1,13 @@
-import { IsArray, IsDate, IsEnum, IsNotEmpty, IsNumber, IsString, Validate } from "class-validator";
+import {
+  IsArray,
+  IsDate,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+  Max,
+  Validate,
+} from "class-validator";
 import { SHOW_CATEGORY } from "../types/show-category.type";
 import { Type } from "class-transformer";
 import { IsAfter } from "../validators/is-after.validators";
@@ -27,6 +36,7 @@ export class CreateShowDto {
 
   @IsNumber()
   @IsNotEmpty({ message: "가격을 입력해주세요." })
+  @Max(50000, { message: "50000원 이하로 입력해주세요." })
   price: number;
 
   @Type(() => Date) // JSON의 날짜 문자열을 Date 타입으로 변환

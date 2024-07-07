@@ -12,23 +12,26 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post("sign-up")
-  async register(@Body() signUpDto: SignUpDto) {
-    return await this.usersService.signUp(
-      signUpDto.email,
-      signUpDto.password,
-      signUpDto.passwordConfirm,
-      signUpDto.nickname,
-    );
+  async register(@Body() signUpDto: SignUpDto): Promise<{ message: string }> {
+    return await this.usersService.signUp({
+      email: signUpDto.email,
+      password: signUpDto.password,
+      passwordConfirm: signUpDto.passwordConfirm,
+      nickname: signUpDto.nickname,
+    });
   }
 
   @Post("sign-in")
-  async login(@Body() signInDto: SignInDto) {
-    return await this.usersService.signIn(signInDto.email, signInDto.password);
+  async login(@Body() signInDto: SignInDto): Promise<{ accessToken: string }> {
+    return await this.usersService.signIn({
+      email: signInDto.email,
+      password: signInDto.password,
+    });
   }
 
   @UseGuards(AuthGuard("jwt"))
   @Get("")
-  async getMyInfo(@UserInfo() user: User) {
-    return await this.usersService.findByEmail(user.email);
+  async getMyInfo(@UserInfo() user: User): Promise<User> {
+    return await this.usersService.findByEmail({ email: user.email });
   }
 }
