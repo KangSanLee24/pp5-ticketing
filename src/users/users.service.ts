@@ -38,8 +38,8 @@ export class UsersService {
     if (existingUser) {
       throw new ConflictException("이미 해당 이메일로 가입된 사용자가 있습니다.");
     }
-    // this.configService.get<number>('HASH_TIMES')
-    const hashedPassword = await hash(password, 12);
+
+    const hashedPassword = await hash(password, this.configService.get<number>("HASH_TIMES"));
     await this.userRepository.save({
       email,
       password: hashedPassword,
