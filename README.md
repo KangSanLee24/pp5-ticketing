@@ -26,7 +26,7 @@
 ## API
 
 ![API명세서](./assets/API.PNG)
-[API명세서 링크](https://www.notion.so/p5-1725d6610a6f4ce89d61b545c5042dfa?pvs=4)
+[API명세서 링크](https://torch-consonant-c1e.notion.site/pp5-1725d6610a6f4ce89d61b545c5042dfa?pvs=4)
 
 ## ERD
 
